@@ -84,9 +84,7 @@ namespace VirtualFS
                 case "workingDir":
                 case "pwd":
                 {
-                    m_DirStack.AsEnumerable()!.Reverse().Select(dir => dir.Name + "/").ForEach(Console.Write);
-                    Console.WriteLine();
-
+                    Console.WriteLine(GetWorkingDir());
                     break;
                 }
                 case "changeDir":
@@ -233,6 +231,13 @@ namespace VirtualFS
                     break;
                 }
             }
+        }
+
+        public string GetWorkingDir()
+        {
+            StringWriter sw = new StringWriter();
+            m_DirStack.AsEnumerable()!.Reverse().Select(dir => dir.Name + "/").ForEach(sw.Write);
+            return sw.ToString();
         }
     }
 }
