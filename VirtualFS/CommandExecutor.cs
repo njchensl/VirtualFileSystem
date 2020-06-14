@@ -166,9 +166,15 @@ namespace VirtualFS
                 case "ls":
                 {
                     Console.ForegroundColor = ConsoleColor.Green;
-                    m_DirStack.Peek().DirForEach(dir => { Console.WriteLine("Dir: " + dir.Name); });
+                    m_DirStack.Peek().DirForEach(dir =>
+                    {
+                        Console.WriteLine($"|{"Dir",15}   |   {dir.Name,40}    |    {dir.Size + " Bytes",20}|");
+                    });
                     Console.ForegroundColor = ConsoleColor.Magenta;
-                    m_DirStack.Peek().FileForEach(f => { Console.WriteLine("File: " + f.Name); });
+                    m_DirStack.Peek().FileForEach(f =>
+                    {
+                        Console.WriteLine($"|{"File",15}   |   {f.Name,40}    |    {f.Size + " Bytes",20}|");
+                    });
                     Console.ForegroundColor = ConsoleColor.White;
                     break;
                 }
@@ -221,6 +227,7 @@ namespace VirtualFS
                     {
                         size = (int)m_Disk.Size;
                     }
+
                     m_Disk.Defragment(m_Root, size);
                     break;
                 }

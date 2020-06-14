@@ -8,6 +8,9 @@ namespace VirtualFS
     public class VDirectory
     {
         public string Name { get; set; }
+
+        public uint Size => (uint)m_Files.Select(f => (int)f.Size).Sum();
+
         private IList<VDirectory> m_SubDirectories;
         private IList<VFile> m_Files;
 
@@ -27,6 +30,7 @@ namespace VirtualFS
         {
             m_SubDirectories.Add(dir);
         }
+
         public void RemoveSubDirectory(VDirectory dir)
         {
             m_SubDirectories.Remove(dir);
@@ -41,21 +45,20 @@ namespace VirtualFS
         {
             m_Files.Add(file);
         }
-        
+
         public void RemoveFile(VFile file)
         {
             m_Files.Remove(file);
         }
-        
+
         public void DirForEach(Action<VDirectory> action)
         {
             m_SubDirectories.ForEach(action);
         }
-        
+
         public void FileForEach(Action<VFile> action)
         {
             m_Files.ForEach(action);
         }
-
     }
 }
