@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 
@@ -179,6 +178,58 @@ namespace VirtualFS
                 case "mkdir":
                 {
                     m_DirStack.Peek().AddSubDirectory(new VDirectory(args[1]));
+                    break;
+                }
+                case "removeDir":
+                case "rmdir":
+                {
+                    VDirectory target = m_DirStack.Peek().GetSubDirectory(args[1]);
+                    if (target == null)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("Not Found: " + args[1]);
+                        Console.ForegroundColor = ConsoleColor.White;
+                        break;
+                    }
+
+                    m_DirStack.Peek().RemoveSubDirectory(target);
+                    break;
+                }
+                case "removeFile":
+                case "rm":
+                {
+                    string name = args[1];
+                    VFile file = m_DirStack.Peek().GetFile(name);
+                    if (file == null)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("File : " + name + " does not exist");
+                        Console.ForegroundColor = ConsoleColor.White;
+                        break;
+                    }
+
+                    m_DirStack.Peek().RemoveFile(file);
+                    break;
+                }
+                case "defragment":
+                case "defrag":
+                {
+                    int size;
+                    if (args.Length >= 2)
+                    {
+                        size = int.Parse(args[1]);
+                    }
+                    else
+                    {
+                        size = (int)m_Disk.Size;
+                    }
+                    m_Disk.Defragment(m_Root, size);
+                    break;
+                }
+                case "diskSize":
+                case "dsize":
+                {
+                    Console.WriteLine("Size: " + m_Disk.Size);
                     break;
                 }
             }

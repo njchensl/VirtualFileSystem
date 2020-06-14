@@ -4,7 +4,7 @@ namespace VirtualFS
 {
     internal static class Application
     {
-        static void Main(string[] args)
+        static void Main()
         {
             Console.ForegroundColor = ConsoleColor.White;
             CommandExecutor executor = new CommandExecutor();

@@ -1,15 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace VirtualFS
 {
     public unsafe class VDisk
     {
-        private readonly byte* m_Data;
-        private readonly ulong m_Size;
+        private byte* m_Data;
+        public ulong Size;
 
         public RefUInt Head { get; set; }
 
@@ -17,7 +15,7 @@ namespace VirtualFS
         {
             byte[] data = File.ReadAllBytes(path);
             m_Data = (byte*)Marshal.AllocHGlobal(data.Length);
-            m_Size = (ulong)data.Length;
+            Size = (ulong)data.Length;
             fixed (byte* src = data)
             {
                 memcpy(m_Data, src, (ulong)data.Length);
@@ -35,10 +33,12 @@ namespace VirtualFS
         public void Write()
         {
             FileStream fs = File.OpenWrite("disk.vd");
-            for (ulong i = 0; i < m_Size; i++)
+            for (ulong i = 0; i < Size; i++)
             {
                 fs.WriteByte(m_Data[i]);
             }
+            fs.Flush();
+            fs.Close();
         }
 
         public VFile NewFile(string name, byte[] data)
@@ -63,6 +63,25 @@ namespace VirtualFS
             }
 
             return dataArray;
+        }
+
+        public void Defragment(FSRoot root, int size)
+        {
+            byte* newBuffer = (byte*)Marshal.AllocHGlobal(size);
+            uint head = 0;
+
+            void FileDefrag(VFile f)
+            {
+                memcpy(newBuffer + head, m_Data + f.Offset, f.Size);
+                f.Offset = head;
+                head += f.Size;
+            }
+
+            root.RootDir.FileForEach(FileDefrag);
+            root.RootDir.DirForEach(dir => { dir.FileForEach(FileDefrag); });
+            Size = (ulong)size;
+            Marshal.FreeHGlobal((IntPtr)m_Data);
+            m_Data = newBuffer;
         }
 
         // helpers

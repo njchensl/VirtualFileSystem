@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace VirtualFS
@@ -28,12 +27,26 @@ namespace VirtualFS
         {
             m_SubDirectories.Add(dir);
         }
+        public void RemoveSubDirectory(VDirectory dir)
+        {
+            m_SubDirectories.Remove(dir);
+        }
 
         public VFile GetFile(string name)
         {
             return m_Files.FirstOrDefault(file => file.Name == name);
         }
 
+        public void AddFile(VFile file)
+        {
+            m_Files.Add(file);
+        }
+        
+        public void RemoveFile(VFile file)
+        {
+            m_Files.Remove(file);
+        }
+        
         public void DirForEach(Action<VDirectory> action)
         {
             m_SubDirectories.ForEach(action);
@@ -44,9 +57,5 @@ namespace VirtualFS
             m_Files.ForEach(action);
         }
 
-        public void AddFile(VFile file)
-        {
-            m_Files.Add(file);
-        }
     }
 }
