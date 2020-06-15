@@ -1,1 +1,1 @@
-dotnet publish -r win-x64 /p:PublishSingleFile=true
+dotnet publish -r win10-x64 /p:PublishSingleFile=true

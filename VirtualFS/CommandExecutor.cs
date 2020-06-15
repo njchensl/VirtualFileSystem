@@ -65,7 +65,7 @@ namespace VirtualFS
                         Console.ForegroundColor = ConsoleColor.Yellow;
                         Console.WriteLine("File system does not exist. Creating a new file system.");
                         Console.ForegroundColor = ConsoleColor.White;
-                        m_Root = new FSRoot(m_Disk);
+                        m_Root = new FSRoot();
                     }
 
                     m_Disk.Head = m_Root.Head;
