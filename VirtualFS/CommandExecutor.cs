@@ -131,10 +131,15 @@ namespace VirtualFS
                 case "mfi":
                 case "store":
                 {
-                    string fileName = args[1];
-                    string name = Path.GetFileName(fileName);
-                    byte[] data = File.ReadAllBytes(fileName);
-                    VFile file = m_Disk.NewFile(name, data);
+                    string filePath = args[1];
+                    string name = Path.GetFileName(filePath);
+                    FileInfo info = new FileInfo(filePath);
+                    void* nativeFileHandle = fopen(filePath, "rb");
+                    byte* data = (byte*)malloc((ulong)info.Length);
+                    fread(data, (ulong)info.Length, 1, nativeFileHandle);
+                    fclose(nativeFileHandle);
+                    VFile file = m_Disk.NewFile(name, data, (uint)info.Length);
+                    free(data);
                     m_DirStack.Peek().AddFile(file);
                     break;
                 }

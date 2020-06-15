@@ -47,6 +47,14 @@ namespace VirtualFS
             return file;
         }
 
+        public VFile NewFile(string name, byte* data, uint size)
+        {
+            VFile file = new VFile(name, Head, size);
+            memcpy(m_Data + Head, data, size);
+            Head.Value += size;
+            return file;
+        }
+
         public byte* ReadFileNative(VFile file)
         {
             return m_Data + file.Offset;
