@@ -4,10 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using static stdio;
 
 namespace VirtualFS
 {
-    public class CommandExecutor
+    public unsafe class CommandExecutor
     {
         public bool Running { get; set; }
         private VDisk m_Disk;
@@ -151,15 +152,11 @@ namespace VirtualFS
                         break;
                     }
 
-                    byte[] fileData = m_Disk.ReadFile(file);
-                    FileStream s = File.Create(name);
-                    foreach (byte b in fileData)
-                    {
-                        s.WriteByte(b);
-                    }
-
-                    s.Flush();
-                    s.Close();
+                    byte* fileData = m_Disk.ReadFileNative(file);
+                    void* nativeFileHandle = fopen(name, "wb");
+                    fwrite(fileData, file.Size, 1, nativeFileHandle);
+                    fclose(nativeFileHandle);
+                    
                     break;
                 }
                 case "list":

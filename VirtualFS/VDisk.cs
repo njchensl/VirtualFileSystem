@@ -1,6 +1,5 @@
-﻿using System;
-using System.IO;
-using System.Runtime.InteropServices;
+﻿using System.IO;
+using static stdio;
 
 namespace VirtualFS
 {
@@ -8,37 +7,32 @@ namespace VirtualFS
     {
         private byte* m_Data;
         public ulong Size;
+        public string Path { get; }
 
         public RefUInt Head { get; set; }
 
         public VDisk(string path)
         {
-            byte[] data = File.ReadAllBytes(path);
-            m_Data = (byte*)Marshal.AllocHGlobal(data.Length);
-            Size = (ulong)data.Length;
-            fixed (byte* src = data)
-            {
-                memcpy(m_Data, src, (ulong)data.Length);
-            }
+            Path = path;
+            FileInfo f = new FileInfo(path);
 
-            data = null;
-            GC.Collect();
+            m_Data = (byte*)malloc((ulong)f.Length);
+            Size = (ulong)f.Length;
+            void* file = fopen(path, "rb");
+            fread(m_Data, (ulong)f.Length, 1, file);
+            fclose(file);
         }
 
         ~VDisk()
         {
-            Marshal.FreeHGlobal((IntPtr)m_Data);
+            free(m_Data);
         }
 
         public void Write()
         {
-            FileStream fs = File.OpenWrite("disk.vd");
-            for (ulong i = 0; i < Size; i++)
-            {
-                fs.WriteByte(m_Data[i]);
-            }
-            fs.Flush();
-            fs.Close();
+            void* file = fopen(Path, "wb");
+            fwrite(m_Data, Size, 1, file);
+            fclose(file);
         }
 
         public VFile NewFile(string name, byte[] data)
@@ -53,21 +47,14 @@ namespace VirtualFS
             return file;
         }
 
-        public byte[] ReadFile(VFile file)
+        public byte* ReadFileNative(VFile file)
         {
-            byte* dataStart = m_Data + file.Offset;
-            byte[] dataArray = new byte[file.Size];
-            fixed (byte* dataArrayStart = dataArray)
-            {
-                memcpy(dataArrayStart, dataStart, file.Size);
-            }
-
-            return dataArray;
+            return m_Data + file.Offset;
         }
-
+        
         public void Defragment(FSRoot root, int size)
         {
-            byte* newBuffer = (byte*)Marshal.AllocHGlobal(size);
+            byte* newBuffer = (byte*)malloc((ulong)size);
             uint head = 0;
 
             void FileDefrag(VFile f)
@@ -80,12 +67,8 @@ namespace VirtualFS
             root.RootDir.FileForEach(FileDefrag);
             root.RootDir.DirForEach(dir => { dir.FileForEach(FileDefrag); });
             Size = (ulong)size;
-            Marshal.FreeHGlobal((IntPtr)m_Data);
+            free(m_Data);
             m_Data = newBuffer;
         }
-
-        // helpers
-        [DllImport("msvcrt.dll")]
-        private static extern void* memcpy(void* destination, void* source, ulong num);
     }
 }
