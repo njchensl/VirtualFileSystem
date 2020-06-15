@@ -10,13 +10,15 @@ namespace VirtualFS
         public string Name { get; set; }
 
         public uint Size => (uint)m_Files.Select(f => (int)f.Size).Sum();
+        public VDirectory ParentDir { get; set; }
 
         private IList<VDirectory> m_SubDirectories;
         private IList<VFile> m_Files;
 
-        public VDirectory(string name)
+        public VDirectory(string name, VDirectory parentDir)
         {
             Name = name;
+            ParentDir = parentDir;
             m_SubDirectories = new List<VDirectory>();
             m_Files = new List<VFile>();
         }
@@ -29,11 +31,13 @@ namespace VirtualFS
         public void AddSubDirectory(VDirectory dir)
         {
             m_SubDirectories.Add(dir);
+            dir.ParentDir = this;
         }
 
         public void RemoveSubDirectory(VDirectory dir)
         {
             m_SubDirectories.Remove(dir);
+            dir.ParentDir = null;
         }
 
         public VFile GetFile(string name)

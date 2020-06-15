@@ -11,10 +11,10 @@ namespace VirtualFS
             while (executor.Running)
             {
                 string workingDir = executor.GetWorkingDir();
-                if (workingDir.Trim() != "")
-                {
-                    workingDir = workingDir.Substring(0, workingDir.Length - 1);
-                }
+                // if (workingDir.Trim() != "")
+                // {
+                //     workingDir = workingDir.Substring(0, workingDir.Length - 1);
+                // }
                 Console.Write(workingDir + "$ ");
                 executor.Execute(Console.ReadLine());
             }

@@ -10,7 +10,7 @@ namespace VirtualFS
 
         public FSRoot()
         {
-            RootDir = new VDirectory("root");
+            RootDir = new VDirectory("root", null);
             Head = new RefUInt();
         }
     }

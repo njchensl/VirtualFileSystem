@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using static stdio;
@@ -13,12 +11,11 @@ namespace VirtualFS
         public bool Running { get; set; }
         private VDisk m_Disk;
         private FSRoot m_Root;
-        private Stack<VDirectory> m_DirStack;
+        private VDirectory m_WorkingDir;
 
         public CommandExecutor()
         {
             Running = true;
-            m_DirStack = new Stack<VDirectory>();
         }
 
         public void Execute(string command)
@@ -69,7 +66,7 @@ namespace VirtualFS
                     }
 
                     m_Disk.Head = m_Root.Head;
-                    m_DirStack.Push(m_Root.RootDir);
+                    m_WorkingDir = m_Root.RootDir;
                     break;
                 }
                 case "write":
@@ -91,11 +88,10 @@ namespace VirtualFS
                 case "changeDir":
                 case "cd":
                 {
-                    if (args[1].StartsWith("root/"))
+                    if (args[1].StartsWith("/"))
                     {
-                        args[1] = args[1].Substring(5);
-                        m_DirStack.Clear();
-                        m_DirStack.Push(m_Root.RootDir);
+                        m_WorkingDir = m_Root.RootDir;
+                        args[1] = args[1].Substring(1);
                     }
 
                     string[] dirs = args[1].Split("/");
@@ -108,11 +104,14 @@ namespace VirtualFS
 
                         if (dir == "..")
                         {
-                            m_DirStack.Pop();
+                            if (m_WorkingDir!.ParentDir != null)
+                            {
+                                m_WorkingDir = m_WorkingDir.ParentDir;
+                            }
                         }
                         else
                         {
-                            VDirectory target = m_DirStack.Peek().GetSubDirectory(dir);
+                            VDirectory target = m_WorkingDir.GetSubDirectory(dir);
                             if (target == null)
                             {
                                 Console.ForegroundColor = ConsoleColor.Red;
@@ -121,7 +120,7 @@ namespace VirtualFS
                                 break;
                             }
 
-                            m_DirStack.Push(target);
+                            m_WorkingDir = target;
                         }
                     }
 
@@ -140,7 +139,7 @@ namespace VirtualFS
                     fclose(nativeFileHandle);
                     VFile file = m_Disk.NewFile(name, data, (uint)info.Length);
                     free(data);
-                    m_DirStack.Peek().AddFile(file);
+                    m_WorkingDir.AddFile(file);
                     break;
                 }
                 case "takeFileOut":
@@ -148,7 +147,7 @@ namespace VirtualFS
                 case "retrieve":
                 {
                     string name = args[1];
-                    VFile file = m_DirStack.Peek().GetFile(name);
+                    VFile file = m_WorkingDir.GetFile(name);
                     if (file == null)
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
@@ -168,12 +167,12 @@ namespace VirtualFS
                 case "ls":
                 {
                     Console.ForegroundColor = ConsoleColor.Green;
-                    m_DirStack.Peek().DirForEach(dir =>
+                    m_WorkingDir.DirForEach(dir =>
                     {
                         Console.WriteLine($"|{"Dir",15}   |   {dir.Name,40}    |    {dir.Size + " Bytes",20}|");
                     });
                     Console.ForegroundColor = ConsoleColor.Magenta;
-                    m_DirStack.Peek().FileForEach(f =>
+                    m_WorkingDir.FileForEach(f =>
                     {
                         Console.WriteLine($"|{"File",15}   |   {f.Name,40}    |    {f.Size + " Bytes",20}|");
                     });
@@ -183,13 +182,13 @@ namespace VirtualFS
                 case "makeDir":
                 case "mkdir":
                 {
-                    m_DirStack.Peek().AddSubDirectory(new VDirectory(args[1]));
+                    m_WorkingDir.AddSubDirectory(new VDirectory(args[1], m_WorkingDir));
                     break;
                 }
                 case "removeDir":
                 case "rmdir":
                 {
-                    VDirectory target = m_DirStack.Peek().GetSubDirectory(args[1]);
+                    VDirectory target = m_WorkingDir.GetSubDirectory(args[1]);
                     if (target == null)
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
@@ -198,14 +197,14 @@ namespace VirtualFS
                         break;
                     }
 
-                    m_DirStack.Peek().RemoveSubDirectory(target);
+                    m_WorkingDir.RemoveSubDirectory(target);
                     break;
                 }
                 case "removeFile":
                 case "rm":
                 {
                     string name = args[1];
-                    VFile file = m_DirStack.Peek().GetFile(name);
+                    VFile file = m_WorkingDir.GetFile(name);
                     if (file == null)
                     {
                         Console.ForegroundColor = ConsoleColor.Red;
@@ -214,7 +213,7 @@ namespace VirtualFS
                         break;
                     }
 
-                    m_DirStack.Peek().RemoveFile(file);
+                    m_WorkingDir.RemoveFile(file);
                     break;
                 }
                 case "defragment":
@@ -244,9 +243,25 @@ namespace VirtualFS
 
         public string GetWorkingDir()
         {
-            StringWriter sw = new StringWriter();
-            m_DirStack.AsEnumerable()!.Reverse().Select(dir => dir.Name + "/").ForEach(sw.Write);
-            return sw.ToString();
+            string wd = "";
+            VDirectory dir = m_WorkingDir;
+            if (dir == null)
+            {
+                return "";
+            }
+
+            if (dir == m_Root.RootDir)
+            {
+                return "/";
+            }
+
+            while (dir != null)
+            {
+                wd = "/" + dir.Name + wd;
+                dir = dir.ParentDir;
+            }
+
+            return wd.Substring(5);
         }
     }
 }
