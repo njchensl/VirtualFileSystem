@@ -131,8 +131,8 @@ namespace VirtualFS
                 case "mfi":
                 case "store":
                 {
-                    string name = args[1];
-                    string fileName = args[2];
+                    string fileName = args[1];
+                    string name = Path.GetFileName(fileName);
                     byte[] data = File.ReadAllBytes(fileName);
                     VFile file = m_Disk.NewFile(name, data);
                     m_DirStack.Peek().AddFile(file);
